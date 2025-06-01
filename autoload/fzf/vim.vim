@@ -69,7 +69,7 @@ function! s:bash()
   let s:bash = found[0]
 
   " Make 8.3 filename via cmd.exe
-  if s:is_win
+  if s:is_win && &shell =~# 'cmd.exe'
     let s:bash = s:winpath(s:bash)
   endif
 
@@ -82,8 +82,14 @@ function! s:escape_for_bash(path)
   endif
 
   if !exists('s:is_linux_like_bash')
-    call system(s:bash . ' -c "ls /mnt/[A-Za-z]"')
-    let s:is_linux_like_bash = v:shell_error == 0
+    " Unable to read from temporary file with a different shell than cmd.exe on
+    " Windows. Assume bash is not Linux-like in this case.
+    try
+      call system(s:bash . ' -c "ls /mnt/[A-Za-z]"')
+      let s:is_linux_like_bash = v:shell_error == 0
+    catch /^Vim\%((\a\+)\)\=:E282:/
+      let s:is_linux_like_bash = 0
+    endtry
   endif
 
   let path = substitute(a:path, '\', '/', 'g')
