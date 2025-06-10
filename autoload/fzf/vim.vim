@@ -95,7 +95,8 @@ function! s:escape_for_bash(path)
 endfunction
 
 let s:min_version = '0.56.0'
-let s:is_win = (has('win32') || has('win64')) && !has_key(environ(), 'MSYSTEM')
+let s:is_msys2 = has_key(environ(), 'MSYSTEM')
+let s:is_win = (has('win32') || has('win64')) && !s:is_msys2
 let s:is_wsl_bash = s:is_win && (exepath('bash') =~? 'Windows[/\\]system32[/\\]bash.exe$')
 let s:layout_keys = ['window', 'up', 'down', 'left', 'right']
 let s:bin_dir = expand('<sfile>:p:h:h:h').'/bin/'
@@ -719,6 +720,12 @@ function! s:get_git_root(dir)
   endif
   let dir = len(a:dir) ? a:dir : substitute(split(expand('%:p:h'), '[/\\]\.git\([/\\]\|$\)')[0], '^fugitive://', '', '')
   let root = systemlist('git -C ' . shellescape(dir) . ' rev-parse --show-toplevel')[0]
+  " Git on MSYS2 returns a path with a drive in UNIX format (e.g. /c/) but Vim
+  " expects a drive in Windows format (e.g. C:/). Use cygpath to convert the
+  " path.
+  if s:is_msys2
+    let root = systemlist('cygpath -m ' . root)[0]
+  endif
   return v:shell_error ? '' : (len(a:dir) ? fnamemodify(a:dir, ':p') : root)
 endfunction
 
