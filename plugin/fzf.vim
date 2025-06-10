@@ -28,7 +28,7 @@ let g:loaded_fzf_vim = 1
 
 let s:cpo_save = &cpo
 set cpo&vim
-let s:is_win = has('win32') || has('win64')
+let s:is_win = (has('win32') || has('win64')) && !has_key(environ(), 'MSYSTEM')
 
 function! s:conf(name, default)
   let conf = get(g:, 'fzf_vim', {})
